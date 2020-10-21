@@ -23,6 +23,8 @@ var ReactRailsUJS = {
 
   TURBOLINKS_PERMANENT_ATTR: "data-turbolinks-permanent",
 
+  TURBOLINKS_PERMANENT_RENDERING_ATTR: "data-turbolinks-permanent-rendering",
+
   // If jQuery is detected, save a reference to it for event handlers
   jQuery: (typeof window !== 'undefined') && (typeof window.jQuery !== 'undefined') && window.jQuery,
 
@@ -95,6 +97,7 @@ var ReactRailsUJS = {
       var hydrate = node.getAttribute(ujs.RENDER_ATTR);
       var cacheId = node.getAttribute(ujs.CACHE_ID_ATTR);
       var turbolinksPermanent = node.hasAttribute(ujs.TURBOLINKS_PERMANENT_ATTR);
+      var turbolinksPermanentRendering = node.hasAttribute(ujs.TURBOLINKS_PERMANENT_RENDERING_ATTR);
 
       if (!constructor) {
         var message = "Cannot find component: '" + className + "'"
@@ -104,20 +107,24 @@ var ReactRailsUJS = {
         throw new Error(message + ". Make sure your component is available to render.")
       } else {
         var component = this.components[cacheId];
-        if(component === undefined) {
-          component = React.createElement(constructor, props);
-          if(turbolinksPermanent) {
-            this.components[cacheId] = component;
+        if (turbolinksPermanentRendering && component !== undefined) {
+          // do nothing if permanent component is redering
+        } else {
+          if(component === undefined) {
+            component = React.createElement(constructor, props);
+            if(turbolinksPermanent) {
+              this.components[cacheId] = component;
+            }
+          }
+
+          if (hydrate && typeof ReactDOM.hydrate === "function") {
+            component = ReactDOM.hydrate(component, node);
+          } else {
+            component = ReactDOM.render(component, node);
           }
         }
-
-        if (hydrate && typeof ReactDOM.hydrate === "function") {
-          component = ReactDOM.hydrate(component, node);
-        } else {
-          component = ReactDOM.render(component, node);
-        }
       }
-    } 
+    }
   },
 
   // Within `searchSelector`, find nodes which have React components
@@ -127,7 +134,9 @@ var ReactRailsUJS = {
 
     for (var i = 0; i < nodes.length; ++i) {
       var node = nodes[i];
-      ReactDOM.unmountComponentAtNode(node);
+      if (!node.hasAttribute(ReactRailsUJS.TURBOLINKS_PERMANENT_RENDERING_ATTR)) {
+        ReactDOM.unmountComponentAtNode(node);
+      }
     }
   },
 
