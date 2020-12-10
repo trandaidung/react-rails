@@ -136,9 +136,10 @@ var ReactRailsUJS = {
     for (var i = 0; i < nodes.length; ++i) {
       var node = nodes[i];
       if (node.hasAttribute(ujs.TURBOLINKS_PERMANENT_RENDERING_ATTR)) {
+        var nodeSelector = '#' + node.id;
         if (! (newBody &&
-          newBody.querySelector(`#${node.id}`) &&
-          newBody.querySelector(`#${node.id}`).hasAttribute(ujs.TURBOLINKS_PERMANENT_RENDERING_ATTR)
+          newBody.querySelector(nodeSelector) &&
+          newBody.querySelector(nodeSelector).hasAttribute(ujs.TURBOLINKS_PERMANENT_RENDERING_ATTR)
         )) {
           ReactDOM.unmountComponentAtNode(node);
           this.components[node.getAttribute(ujs.CACHE_ID_ATTR)] = undefined;
