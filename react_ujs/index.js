@@ -85,7 +85,7 @@ var ReactRailsUJS = {
   // Within `searchSelector`, find nodes which should have React components
   // inside them, and mount them with their props.
   mountComponents: function(searchSelector) {
-    var ujs = ReactRailsUJS
+    var ujs = ReactRailsUJS;
     var nodes = ujs.findDOMNodes(searchSelector);
 
     for (var i = 0; i < nodes.length; ++i) {
@@ -129,12 +129,21 @@ var ReactRailsUJS = {
 
   // Within `searchSelector`, find nodes which have React components
   // inside them, and unmount those components.
-  unmountComponents: function(searchSelector) {
-    var nodes = ReactRailsUJS.findDOMNodes(searchSelector);
+  unmountComponents: function(searchSelector, newBody) {
+    var ujs = ReactRailsUJS;
+    var nodes = ujs.findDOMNodes(searchSelector);
 
     for (var i = 0; i < nodes.length; ++i) {
       var node = nodes[i];
-      if (!node.hasAttribute(ReactRailsUJS.TURBOLINKS_PERMANENT_RENDERING_ATTR)) {
+      if (node.hasAttribute(ujs.TURBOLINKS_PERMANENT_RENDERING_ATTR)) {
+        if (! (newBody &&
+          newBody.querySelector(`#${node.id}`) &&
+          newBody.querySelector(`#${node.id}`).hasAttribute(ujs.TURBOLINKS_PERMANENT_RENDERING_ATTR)
+        )) {
+          ReactDOM.unmountComponentAtNode(node);
+          this.components[node.getAttribute(ujs.CACHE_ID_ATTR)] = undefined;
+        }
+      } else {
         ReactDOM.unmountComponentAtNode(node);
       }
     }
@@ -159,10 +168,16 @@ ReactRailsUJS.handleMount = function(e) {
 }
 ReactRailsUJS.handleUnmount = function(e) {
   var target = undefined;
-  if (e && e.target) {
-    target = e.target;
+  var newBody = undefined;
+  if (e) {
+    if (e.target) {
+      target = e.target;
+    }
+    if (e.data && e.data.newBody) {
+      newBody = e.data.newBody;
+    }
   }
-  ReactRailsUJS.unmountComponents(target);
+  ReactRailsUJS.unmountComponents(target, newBody);
 }
 
 
